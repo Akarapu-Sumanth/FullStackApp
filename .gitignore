@@ -32,3 +32,28 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Database backups
+backups/
+*.dump
+*.sql
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Django generated files
+staticfiles/
+media/
+
+# Database backups
+backups/
+*.dump
+*.sql

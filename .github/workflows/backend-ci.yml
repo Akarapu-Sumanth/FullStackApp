@@ -1,0 +1,73 @@
+﻿name: Backend CI
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/backend-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: fullstackapp
+          POSTGRES_USER: fullstackuser
+          POSTGRES_PASSWORD: fullstackpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fullstackuser -d fullstackapp"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SECRET_KEY: ci-only-secret-key-not-for-production
+      DEBUG: "True"
+      DB_NAME: fullstackapp
+      DB_USER: fullstackuser
+      DB_PASSWORD: fullstackpassword
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Check Django configuration
+        run: python manage.py check
+
+      - name: Check migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Apply migrations
+        run: python manage.py migrate --noinput
+
+      - name: Run Django tests
+        run: python manage.py test
